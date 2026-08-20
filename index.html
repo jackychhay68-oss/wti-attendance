@@ -295,9 +295,9 @@
       autofillMaternityEnd();
     }
 
-    // Maternity is a fixed 90-day entitlement counted in WORKING days, which
-    // needs the holiday list — so the date is computed server-side. The field
-    // stays editable for staff returning early.
+    // Maternity is a fixed 90-CALENDAR-day entitlement (Labour Law Art. 182),
+    // so the end date is computed server-side and filled in automatically.
+    // The field stays editable for staff returning early.
     async function autofillMaternityEnd() {
       const type = document.getElementById('leaveType').value;
       const startVal = document.getElementById('startDate').value;
@@ -310,7 +310,7 @@
         const res = await callApi('maternityEnd', { startDate: startVal });
         if (res.success && res.endDate) {
           endField.value = res.endDate;
-          showToast(`End date set to ${res.quota} working days. You can shorten it if returning early.`, 'success');
+          showToast(`End date set to ${res.quota} calendar days. You can shorten it if returning early.`, 'success');
         }
       } catch (err) {
         endField.value = originalPlaceholder;
@@ -324,15 +324,11 @@
       const start = document.getElementById('startDate').value;
       const end = document.getElementById('endDate').value;
 
-      if (type === 'Maternity') {
-        const sDate = new Date(start);
-        const eDate = new Date(end);
-        const diffDays = Math.ceil(Math.abs(eDate - sDate) / (1000 * 60 * 60 * 24)) + 1;
-        if (diffDays > 90) {
-          showToast(`Maternity leave cannot exceed 90 days. Selected: ${diffDays} days.`, 'error');
-          return;
-        }
-      }
+      // No maternity length check here on purpose. Requests beyond the
+      // 90-day quota are allowed through; the backend surfaces the excess
+      // as unpaid days for HR to see at approval time. The old check also
+      // counted calendar days while the auto-filled end date was in working
+      // days, so a valid request could be silently rejected.
 
       const formData = {
         leaveType: type,
