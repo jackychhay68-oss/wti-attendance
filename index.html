@@ -155,7 +155,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-medium text-slate-400 mb-1">Start Date</label>
-              <input type="date" id="startDate" required class="input-field w-full rounded-lg px-3 py-2 text-sm [color-scheme:dark]">
+              <input type="date" id="startDate" required onchange="autofillMaternityEnd()" class="input-field w-full rounded-lg px-3 py-2 text-sm [color-scheme:dark]">
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-400 mb-1">Start Time (Opt)</label>
@@ -291,6 +291,30 @@
       } else {
         sickDiv.classList.add('hidden');
         document.getElementById('medicalCert').value = "";
+      }
+      autofillMaternityEnd();
+    }
+
+    // Maternity is a fixed 90-day entitlement counted in WORKING days, which
+    // needs the holiday list — so the date is computed server-side. The field
+    // stays editable for staff returning early.
+    async function autofillMaternityEnd() {
+      const type = document.getElementById('leaveType').value;
+      const startVal = document.getElementById('startDate').value;
+      const endField = document.getElementById('endDate');
+
+      if (type !== 'Maternity' || !startVal) return;
+
+      const originalPlaceholder = endField.value;
+      try {
+        const res = await callApi('maternityEnd', { startDate: startVal });
+        if (res.success && res.endDate) {
+          endField.value = res.endDate;
+          showToast(`End date set to ${res.quota} working days. You can shorten it if returning early.`, 'success');
+        }
+      } catch (err) {
+        endField.value = originalPlaceholder;
+        showToast('Could not auto-calculate the end date — please set it manually.', 'error');
       }
     }
 
