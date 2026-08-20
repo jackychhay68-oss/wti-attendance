@@ -311,6 +311,8 @@
         if (res.success && res.endDate) {
           endField.value = res.endDate;
           showToast(`End date set to ${res.quota} calendar days. You can shorten it if returning early.`, 'success');
+        } else if (res.error) {
+          showToast(res.error, 'error');
         }
       } catch (err) {
         endField.value = originalPlaceholder;
